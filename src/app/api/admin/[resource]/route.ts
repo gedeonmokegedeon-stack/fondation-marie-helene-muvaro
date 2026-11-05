@@ -67,7 +67,11 @@ export async function POST(request: NextRequest, { params }: Params) {
       metadata: { fields: Object.keys(data) },
     })
     revalidatePath('/', 'layout')
-    return Response.json({ row }, { status: 201 })
+    // Ne jamais renvoyer l'empreinte du mot de passe, même à un administrateur.
+    return Response.json(
+      { row: config.key === 'users' ? { ...row, passwordHash: undefined } : row },
+      { status: 201 },
+    )
   } catch (error) {
     return jsonError(error)
   }

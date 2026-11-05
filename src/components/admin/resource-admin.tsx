@@ -47,7 +47,62 @@ const STATUS_LABELS: Record<string, string> = {
   EVENT: 'Événement',
   IMAGE: 'Image',
   DOCUMENT: 'Document',
+  ONE_TIME: 'Don ponctuel',
+  MONTHLY: 'Soutien mensuel',
+  UNASSIGNED: 'Non assigné',
+  MPESA: 'M-Pesa',
+  AIRTEL_MONEY: 'Airtel Money',
+  ORANGE_MONEY: 'Orange Money',
+  INTERNATIONAL: 'International',
+  SUPER_ADMIN: 'Super-administration',
+  ADMIN: 'Administration',
+  EDITOR: 'Contenus',
+  VOLUNTEER_MANAGER: 'Bénévoles et contacts',
+  DONATION_MANAGER: 'Suivi des dons',
+  REPORT_MANAGER: 'Rapports et documents',
+  AUDITOR: 'Audit / lecture',
 }
+
+/** Libellés français des champs affichés dans les fiches de détail. */
+const FIELD_LABELS: Record<string, string> = {
+  reference: 'Référence',
+  status: 'Statut',
+  donorName: 'Nom du donateur',
+  donorEmail: 'E-mail du donateur',
+  donorPhone: 'Téléphone',
+  amount: 'Montant',
+  currency: 'Devise',
+  frequency: 'Fréquence',
+  provider: 'Prestataire',
+  providerReference: 'Référence prestataire',
+  providerEventId: 'Identifiant d’événement',
+  confirmedAt: 'Confirmé le',
+  receiptNumber: 'Numéro de reçu',
+  receiptIssuedAt: 'Reçu émis le',
+  message: 'Message',
+  consent: 'Consentement',
+  adminNote: 'Note administrative',
+  createdAt: 'Reçu le',
+  updatedAt: 'Mis à jour le',
+  name: 'Nom',
+  email: 'E-mail',
+  phone: 'Téléphone',
+  subject: 'Objet',
+  city: 'Ville',
+  skills: 'Compétences',
+  availability: 'Disponibilités',
+  motivation: 'Motivation',
+}
+
+/** Champs techniques sans intérêt pour l'administrateur. */
+const HIDDEN_DETAIL_FIELDS = new Set([
+  'id',
+  'passwordHash',
+  'updatedById',
+  'coverImageId',
+  'logoId',
+  'documentId',
+])
 
 function displayValue(key: string, value: unknown): string {
   if (value === null || value === undefined || value === '') return '—'
@@ -376,13 +431,17 @@ export function ResourceAdmin({
                 config.key === 'donations') && (
                 <div className="mb-6 space-y-2 rounded-xl bg-slate-50 p-4 text-sm">
                   {Object.entries(editing ?? {})
-                    .filter(
-                      ([k]) => !['id', 'updatedAt', 'consent', 'adminNote', 'status'].includes(k),
-                    )
+                    .filter(([k]) => !HIDDEN_DETAIL_FIELDS.has(k))
+                    .sort(([a], [b]) => (a === 'status' ? -1 : b === 'status' ? 1 : 0))
                     .map(([k, v]) => (
-                      <div key={k} className="grid grid-cols-[140px_1fr] gap-3">
-                        <span className="font-medium text-slate-500">{k}</span>
-                        <span className="whitespace-pre-wrap break-words text-slate-800">
+                      <div key={k} className="grid grid-cols-[150px_1fr] gap-3">
+                        <span className="font-medium text-slate-500">{FIELD_LABELS[k] ?? k}</span>
+                        <span
+                          className={cn(
+                            'whitespace-pre-wrap break-words text-slate-800',
+                            k === 'status' && 'font-semibold',
+                          )}
+                        >
                           {displayValue(k, v)}
                         </span>
                       </div>

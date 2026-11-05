@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { getPrisma } from '@/lib/db'
+import { ApiError } from '@/lib/security'
 import type { Permission } from '@/lib/permissions'
 import {
   pageSchema,
@@ -438,7 +439,7 @@ export function normalizeData(
     !data.documentId &&
     !existing?.documentId
   ) {
-    throw new Error('Un rapport publié doit être associé à un document PDF.')
+    throw new ApiError('Un rapport publié doit être associé à un document PDF.', 422)
   }
   return data
 }
