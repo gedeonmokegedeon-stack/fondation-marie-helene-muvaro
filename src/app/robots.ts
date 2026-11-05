@@ -1,8 +1,11 @@
 import type { MetadataRoute } from 'next'
-import { getServerEnv, getSiteUrl } from '@/lib/env'
+import { getSiteUrl, isPublicIndexing } from '@/lib/env'
+
+// Évalué à l'exécution : PUBLIC_INDEXING peut changer sans rebuild de l'image.
+export const dynamic = 'force-dynamic'
 
 export default function robots(): MetadataRoute.Robots {
-  const indexing = getServerEnv().PUBLIC_INDEXING === '1'
+  const indexing = isPublicIndexing()
   return {
     rules: [
       {

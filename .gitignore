@@ -14,6 +14,7 @@ next-env.d.ts
 .env
 .env.*
 !.env.example
+!.env.production.example
 
 # Client Prisma généré (régénéré via `npm run db:generate`)
 /src/generated/prisma

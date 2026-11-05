@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { parseServerEnv } from '@/lib/env'
+import { afterEach, describe, expect, it } from 'vitest'
+import { getSiteUrl, isPublicIndexing, parseServerEnv } from '@/lib/env'
 
 const VALID_DATABASE_URL = 'postgresql://fmhm:motdepasse@localhost:5432/fmhm?schema=public'
 
@@ -62,5 +62,37 @@ describe('parseServerEnv', () => {
     if (result.success) {
       expect('VARIABLE_INCONNUE' in result.data).toBe(false)
     }
+  })
+})
+
+describe('métadonnées sûres pendant le build (image Docker sans .env)', () => {
+  const snapshot = { ...process.env }
+  afterEach(() => {
+    process.env = { ...snapshot }
+  })
+
+  it('getSiteUrl fonctionne sans DATABASE_URL ni validation complète', () => {
+    delete process.env.DATABASE_URL
+    delete process.env.NEXT_PUBLIC_SITE_URL
+    expect(getSiteUrl()).toBe('http://localhost:3000')
+  })
+
+  it('getSiteUrl normalise l’URL publique en origine', () => {
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://fondation.example.org/chemin'
+    expect(getSiteUrl()).toBe('https://fondation.example.org')
+  })
+
+  it('getSiteUrl ignore une URL invalide sans lever d’exception', () => {
+    process.env.NEXT_PUBLIC_SITE_URL = 'pas une url'
+    expect(getSiteUrl()).toBe('http://localhost:3000')
+  })
+
+  it('l’indexation est désactivée par défaut et activable à l’exécution', () => {
+    delete process.env.PUBLIC_INDEXING
+    expect(isPublicIndexing()).toBe(false)
+    process.env.PUBLIC_INDEXING = '0'
+    expect(isPublicIndexing()).toBe(false)
+    process.env.PUBLIC_INDEXING = '1'
+    expect(isPublicIndexing()).toBe(true)
   })
 })

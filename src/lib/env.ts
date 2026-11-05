@@ -51,6 +51,27 @@ export function getAuthSecret(): string {
   return secret
 }
 
+/**
+ * URL publique et indexation sont lues directement dans process.env.
+ *
+ * Pourquoi : ces valeurs sont nécessaires aux métadonnées, évaluées aussi
+ * pendant `next build`. Or l'image Docker est construite SANS `.env`
+ * (exclu par .dockerignore) et sans argument de build : exiger ici la
+ * validation complète (DATABASE_URL…) ferait échouer la construction.
+ * Ces fonctions restent sûres sans base de données et sont réévaluées à
+ * l'exécution, ce qui permet de changer l'URL ou l'indexation sans rebuild.
+ */
 export function getSiteUrl(): string {
-  return getServerEnv().NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim()
+  if (!raw) return 'http://localhost:3000'
+  try {
+    return new URL(raw).origin
+  } catch {
+    return 'http://localhost:3000'
+  }
+}
+
+/** Indexation publique désactivée par défaut (préproduction). */
+export function isPublicIndexing(): boolean {
+  return process.env.PUBLIC_INDEXING === '1'
 }
