@@ -1,18 +1,22 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
+import '@fontsource-variable/inter'
+import '@fontsource-variable/playfair-display'
 import { BRAND } from '@/lib/brand'
+import { getServerEnv, getSiteUrl } from '@/lib/env'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: {
-    default: BRAND.name,
-    template: `%s — ${BRAND.name}`,
-  },
+  metadataBase: new URL(getSiteUrl()),
+  title: { default: `${BRAND.name} — ${BRAND.slogan}`, template: `%s — ${BRAND.name}` },
   description:
-    'Plateforme institutionnelle de la Fondation Marie-Hélène Muvaro, organisation humanitaire basée à Kinshasa, République démocratique du Congo.',
-  // Site en construction : indexation désactivée tant que le lancement
-  // officiel n'est pas validé (à retirer au module « Déploiement »).
-  robots: { index: false, follow: false },
+    'Fondation humanitaire basée à Kinshasa, République démocratique du Congo. Solidarité, dignité et espoir.',
+  applicationName: BRAND.name,
+  robots:
+    getServerEnv().PUBLIC_INDEXING === '1'
+      ? { index: true, follow: true }
+      : { index: false, follow: false },
+  openGraph: { siteName: BRAND.name, locale: 'fr_CD', type: 'website' },
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
