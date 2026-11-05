@@ -93,8 +93,9 @@ export default async function HomePage() {
                 priority
                 className="aspect-[4/3] w-full object-cover"
               />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-navy/80 to-transparent p-5 pt-14">
-                <p className="text-xs text-white/85">
+              {/* Mention en haut : la carte « Kinshasa » occupe le bas de l’image. */}
+              <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-navy/80 to-transparent p-5 pb-14">
+                <p className="text-xs text-white/90">
                   Image d’illustration générée — ne représente pas une action documentée de la
                   Fondation.
                 </p>
