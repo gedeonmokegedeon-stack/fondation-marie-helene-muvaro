@@ -5,9 +5,9 @@
 Plateforme institutionnelle de la Fondation Marie-Hélène Muvaro, organisation humanitaire
 basée à Kinshasa, en République démocratique du Congo.
 
-> **État du projet : Module 0 — Fondations techniques (terminé, en attente de validation).**
-> Le site public et l'administration seront développés progressivement, module par module,
-> après autorisation explicite. Voir [docs/ROADMAP.md](docs/ROADMAP.md).
+> **État du projet : site public + administration sécurisée développés sur branche de travail.**
+> Les contenus officiels manquants sont signalés comme provisoires ; aucun paiement réel n'est activé.
+> Voir [docs/ROADMAP.md](docs/ROADMAP.md) et [docs/EXPLOITATION.md](docs/EXPLOITATION.md).
 
 ## Pile technique
 
@@ -49,7 +49,9 @@ npm run dev
 ```
 
 Le site est servi sur `http://localhost:3000` ; la sonde de santé est disponible sur
-`/api/health`. Guide complet : [docs/INSTALLATION.md](docs/INSTALLATION.md).
+`/api/health`. Première connexion : ouvrir `/installation` pour créer le compte
+super-administrateur (aucun compte par défaut). Guide complet :
+[docs/INSTALLATION.md](docs/INSTALLATION.md) et [docs/EXPLOITATION.md](docs/EXPLOITATION.md).
 
 ## Scripts disponibles
 
@@ -101,6 +103,7 @@ docs/              Installation, architecture, sécurité, feuille de route, dé
 ## Documentation
 
 - [Installation et exploitation](docs/INSTALLATION.md)
+- [Exploitation, sauvegardes et mise en production](docs/EXPLOITATION.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Sécurité](docs/SECURITE.md)
 - [Feuille de route des modules](docs/ROADMAP.md)

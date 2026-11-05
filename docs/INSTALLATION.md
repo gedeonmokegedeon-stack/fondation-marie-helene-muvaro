@@ -62,8 +62,13 @@ npm run db:migrate -- --name description_courte
 npm run dev                 # http://localhost:3000
 ```
 
-- Page d'accueil provisoire : `/`
+- Site public : `/`
 - Sonde de santé (connexion DB réelle) : `/api/health`
+- Première configuration : `/installation` (crée le super-administrateur, puis se verrouille)
+- Administration : `/admin/connexion`
+
+En production, renseigner `ADMIN_SETUP_TOKEN` avant d'utiliser `/installation`.
+Voir [EXPLOITATION.md](EXPLOITATION.md) pour la production, les sauvegardes et les rôles.
 
 ## 6. Vérification qualité et build
 
