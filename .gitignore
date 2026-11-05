@@ -24,6 +24,10 @@ next-env.d.ts
 # Données PostgreSQL locales (développement sandbox uniquement)
 /.pgdata
 
+# Stockage privé des médias téléversés — ne jamais committer les fichiers
+/storage/private/*
+!/storage/private/.gitignore
+
 # Divers
 .DS_Store
 *.pem

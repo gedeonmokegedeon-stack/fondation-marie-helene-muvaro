@@ -2,43 +2,35 @@ import { z } from 'zod'
 
 /**
  * Validation des variables d'environnement côté serveur.
- *
- * - Échec explicite et précoce si la configuration est invalide.
- * - Aucune valeur secrète n'est journalisée.
- * - La validation est paresseuse : `next build` ne requiert pas de base de
- *   données tant qu'aucune route ne l'utilise au moment du rendu.
- *
- * Les variables des modules ultérieurs (authentification, paiements) seront
- * ajoutées ici au fur et à mesure, avec leurs règles de validation.
+ * Échec explicite, aucune valeur secrète journalisée, validation paresseuse.
  */
 const serverEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   DATABASE_URL: z
     .string()
     .min(1, 'DATABASE_URL est requis (voir .env.example)')
-    .regex(
-      /^postgres(ql)?:\/\//,
-      'DATABASE_URL doit être une URL PostgreSQL (postgresql://utilisateur:motdepasse@hôte:port/base)',
-    ),
-  // Requis seulement à partir du module « Authentification ».
+    .regex(/^postgres(ql)?:\/\//, 'DATABASE_URL doit être une URL PostgreSQL'),
   AUTH_SECRET: z
     .union([z.literal(''), z.string().min(32, 'AUTH_SECRET doit contenir au moins 32 caractères')])
     .optional(),
+  NEXT_PUBLIC_SITE_URL: z.union([z.literal(''), z.url()]).optional(),
+  ADMIN_SETUP_TOKEN: z.string().min(24).optional().or(z.literal('')),
+  STORAGE_DIR: z.string().min(1).default('./storage/private'),
+  TRUST_PROXY: z.enum(['0', '1']).default('0'),
+  PUBLIC_INDEXING: z.enum(['0', '1']).default('0'),
+  MAX_UPLOAD_MB: z.coerce.number().int().min(1).max(25).default(10),
 })
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>
 
-/** Valide un jeu de variables sans effet de bord (utilisable dans les tests). */
 export function parseServerEnv(raw: unknown) {
   return serverEnvSchema.safeParse(raw)
 }
 
 let cached: ServerEnv | undefined
 
-/** Retourne l'environnement serveur validé (mis en cache après le premier appel). */
 export function getServerEnv(): ServerEnv {
   if (cached) return cached
-
   const result = parseServerEnv(process.env)
   if (!result.success) {
     const details = result.error.issues
@@ -46,7 +38,19 @@ export function getServerEnv(): ServerEnv {
       .join('\n')
     throw new Error(`Configuration d'environnement invalide :\n${details}`)
   }
-
   cached = result.data
   return cached
+}
+
+/** Secret obligatoire pour les sessions ; jamais fourni par défaut en production. */
+export function getAuthSecret(): string {
+  const secret = getServerEnv().AUTH_SECRET
+  if (!secret || secret.length < 32) {
+    throw new Error('AUTH_SECRET doit être configuré avec au moins 32 caractères aléatoires.')
+  }
+  return secret
+}
+
+export function getSiteUrl(): string {
+  return getServerEnv().NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 }

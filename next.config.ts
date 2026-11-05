@@ -2,22 +2,15 @@ import type { NextConfig } from 'next'
 
 /**
  * En-têtes de sécurité appliqués à toutes les réponses.
- *
- * Remarques :
- * - La protection contre l'encadrement (X-Frame-Options) n'est activée qu'en
- *   production afin de ne pas bloquer les aperçus de développement (iframes).
- * - Une politique CSP complète (avec nonces) sera définie dans le module
- *   « Sécurité », une fois l'authentification en place. Voir docs/SECURITE.md.
+ * X-Frame-Options / HSTS uniquement en production pour ne pas bloquer les
+ * aperçus de développement. Une CSP stricte peut être ajoutée au reverse proxy.
  */
 const isProduction = process.env.NODE_ENV === 'production'
 
 const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-  {
-    key: 'Permissions-Policy',
-    value: 'camera=(), microphone=(), geolocation=(), payment=()',
-  },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
   ...(isProduction
     ? [
@@ -30,15 +23,11 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  // Aperçus de développement proxifiés (sandbox Arena) — sans effet en production.
+  output: 'standalone',
+  serverExternalPackages: ['sharp', '@node-rs/argon2'],
   allowedDevOrigins: ['*.e2b.app'],
   async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: securityHeaders,
-      },
-    ]
+    return [{ source: '/(.*)', headers: securityHeaders }]
   },
 }
 
