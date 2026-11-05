@@ -1,0 +1,31 @@
+// ============================================================================
+// FONDATION MARIE-HÉLÈNE MUVARO — Schéma Prisma initial (Module 0)
+//
+// Périmètre volontairement minimal : ce schéma valide la chaîne complète
+// PostgreSQL → Prisma → application (migrations, client typé, requêtes).
+//
+// Le modèle de données complet (utilisateurs, rôles, pages, projets,
+// actualités, événements, partenaires, bénévoles, dons, rapports, journal
+// d'audit, paramètres…) sera conçu et validé dans les modules ultérieurs.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Métadonnées techniques internes (marqueur d'installation, version, etc.).
+/// Aucune donnée personnelle ou sensible ne doit y être stockée.
+model SystemMetadata {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("system_metadata")
+}
