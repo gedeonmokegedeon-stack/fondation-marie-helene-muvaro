@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Favicon provisoire (Module 0) — le logo officiel sera défini au Module 1. -->
+  <rect width="64" height="64" rx="12" fill="#142A46"/>
+  <text x="32" y="43" font-family="Georgia, 'Times New Roman', serif" font-size="26" fill="#B18A42" text-anchor="middle">FM</text>
+</svg>

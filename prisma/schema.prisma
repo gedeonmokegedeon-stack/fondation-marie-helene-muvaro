@@ -1,0 +1,374 @@
+// Fondation Marie-Hélène Muvaro
+// Module 0 conservé : SystemMetadata et migration initiale inchangées.
+// Les modules métier ajoutent des tables sans détruire les données existantes.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Métadonnées techniques internes. Aucune donnée personnelle ou sensible.
+model SystemMetadata {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("system_metadata")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+  VOLUNTEER_MANAGER
+  DONATION_MANAGER
+  REPORT_MANAGER
+  AUDITOR
+}
+
+enum PublicationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ProjectPhase {
+  PROPOSED
+  PLANNED
+  ACTIVE
+  COMPLETED
+}
+
+enum PostKind {
+  NEWS
+  EVENT
+}
+
+enum RequestStatus {
+  NEW
+  IN_REVIEW
+  ACCEPTED
+  DECLINED
+  RESOLVED
+  ARCHIVED
+}
+
+enum MediaKind {
+  IMAGE
+  DOCUMENT
+}
+
+enum DonationProvider {
+  UNASSIGNED
+  MPESA
+  AIRTEL_MONEY
+  ORANGE_MONEY
+  INTERNATIONAL
+}
+
+enum DonationFrequency {
+  ONE_TIME
+  MONTHLY
+}
+
+enum DonationStatus {
+  INTENT
+  PENDING_PROVIDER
+  CONFIRMED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum Currency {
+  USD
+  CDF
+  EUR
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(EDITOR)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions       Session[]
+  auditLogs      AuditLog[]
+  media          MediaAsset[]
+  updatedPages   Page[]
+  updatedPosts   Post[]
+  updatedProjects Project[]
+
+  @@map("users")
+}
+
+/// Jeton aléatoire opaque : seul son SHA-256 est stocké.
+model Session {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model SiteSettings {
+  id                  String   @id @default("default")
+  contactEmail        String?
+  contactPhone        String?
+  address             String?
+  officialNote        String?
+  donationMessage     String?
+  seoDescription      String?
+  updatedAt           DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model Page {
+  id             String            @id @default(cuid())
+  slug           String            @unique
+  title          String
+  summary        String
+  body           String
+  status         PublicationStatus @default(DRAFT)
+  seoTitle       String?
+  seoDescription String?
+  publishedAt    DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  updatedById    String?
+  updatedBy      User?             @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([status, publishedAt])
+  @@map("pages")
+}
+
+model MediaAsset {
+  id           String    @id @default(cuid())
+  kind         MediaKind
+  originalName String
+  storagePath  String    @unique
+  mimeType     String
+  sizeBytes    Int
+  sha256       String
+  alt          String    @default("")
+  caption      String    @default("")
+  isPublic     Boolean   @default(false)
+  archivedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  uploadedById String?
+  uploadedBy   User?     @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  projectCovers Project[] @relation("ProjectCover")
+  postCovers    Post[]    @relation("PostCover")
+  partnerLogos  Partner[] @relation("PartnerLogo")
+  reports       Report[]
+
+  @@index([kind, archivedAt])
+  @@map("media_assets")
+}
+
+model Project {
+  id          String            @id @default(cuid())
+  slug        String            @unique
+  title       String
+  summary     String
+  body        String
+  location    String?
+  phase       ProjectPhase      @default(PROPOSED)
+  status      PublicationStatus @default(DRAFT)
+  startDate   DateTime?
+  endDate     DateTime?
+  coverImageId String?
+  coverImage  MediaAsset?       @relation("ProjectCover", fields: [coverImageId], references: [id], onDelete: SetNull)
+  publishedAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  updatedById String?
+  updatedBy   User?             @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([status, publishedAt])
+  @@map("projects")
+}
+
+model Post {
+  id           String            @id @default(cuid())
+  slug         String            @unique
+  title        String
+  excerpt      String
+  body         String
+  kind         PostKind          @default(NEWS)
+  status       PublicationStatus @default(DRAFT)
+  location     String?
+  eventStartsAt DateTime?
+  eventEndsAt   DateTime?
+  coverImageId String?
+  coverImage   MediaAsset?       @relation("PostCover", fields: [coverImageId], references: [id], onDelete: SetNull)
+  publishedAt  DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  updatedById  String?
+  updatedBy    User?             @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([status, kind, publishedAt])
+  @@index([eventStartsAt])
+  @@map("posts")
+}
+
+model Partner {
+  id          String            @id @default(cuid())
+  name        String
+  description String
+  website     String?
+  logoId      String?
+  logo        MediaAsset?       @relation("PartnerLogo", fields: [logoId], references: [id], onDelete: SetNull)
+  status      PublicationStatus @default(DRAFT)
+  sortOrder   Int               @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([status, sortOrder])
+  @@map("partners")
+}
+
+model Report {
+  id          String            @id @default(cuid())
+  slug        String            @unique
+  title       String
+  summary     String
+  year        Int
+  category    String            @default("Activités")
+  documentId  String?
+  document    MediaAsset?       @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  status      PublicationStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([status, year])
+  @@map("reports")
+}
+
+model ContactRequest {
+  id        String        @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  consent   Boolean
+  status    RequestStatus @default(NEW)
+  adminNote String        @default("")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status, createdAt])
+  @@map("contact_requests")
+}
+
+model VolunteerApplication {
+  id           String        @id @default(cuid())
+  name         String
+  email        String
+  phone        String?
+  city         String
+  skills       String
+  availability String
+  motivation   String
+  consent      Boolean
+  status       RequestStatus @default(NEW)
+  adminNote    String        @default("")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([status, createdAt])
+  @@map("volunteer_applications")
+}
+
+/// Une intention n'est jamais une preuve de paiement.
+/// CONFIRMED ne peut provenir que du service de vérification prestataire.
+model Donation {
+  id                String            @id @default(cuid())
+  reference         String            @unique
+  donorName         String
+  donorEmail        String
+  donorPhone        String?
+  amount            Decimal           @db.Decimal(14, 2)
+  currency          Currency          @default(USD)
+  frequency         DonationFrequency @default(ONE_TIME)
+  provider          DonationProvider  @default(UNASSIGNED)
+  status            DonationStatus    @default(INTENT)
+  providerReference String?
+  providerEventId   String?
+  confirmedAt       DateTime?
+  receiptNumber     String?           @unique
+  receiptIssuedAt   DateTime?
+  message           String            @default("")
+  consent           Boolean
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  events PaymentEvent[]
+
+  @@index([status, createdAt])
+  @@index([provider, providerReference])
+  @@map("donations")
+}
+
+/// Événements prestataire vérifiés, conservés pour idempotence et audit.
+model PaymentEvent {
+  id          String           @id @default(cuid())
+  provider    DonationProvider
+  externalId  String
+  donationId  String
+  donation    Donation         @relation(fields: [donationId], references: [id], onDelete: Restrict)
+  eventType   String
+  payloadHash String
+  receivedAt  DateTime         @default(now())
+
+  @@unique([provider, externalId])
+  @@index([donationId])
+  @@map("payment_events")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
+
+/// Limitation de débit partagée entre instances, sans adresse IP en clair.
+model RateLimitBucket {
+  key       String   @id
+  count     Int
+  resetAt   DateTime
+  updatedAt DateTime @updatedAt
+
+  @@index([resetAt])
+  @@map("rate_limit_buckets")
+}

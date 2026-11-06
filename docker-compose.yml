@@ -1,0 +1,24 @@
+# PostgreSQL pour le DÉVELOPPEMENT LOCAL uniquement.
+# Identifiants de démonstration — ne jamais utiliser en production.
+# Démarrage : docker compose up -d
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: fmhm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fmhm
+      POSTGRES_PASSWORD: fmhm_dev_only
+      POSTGRES_DB: fmhm
+    ports:
+      - '5432:5432'
+    volumes:
+      - fmhm_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U fmhm -d fmhm']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  fmhm_pgdata:

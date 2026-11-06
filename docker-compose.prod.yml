@@ -1,0 +1,66 @@
+# Production — VPS Linux + Docker. Aucun secret en clair : utiliser un fichier
+# .env non versionné (modèle : .env.production.example) ou des secrets Docker.
+# PostgreSQL n'est pas exposé publiquement.
+#
+# DATABASE_URL est dérivée automatiquement de POSTGRES_* et pointe vers le
+# service `db` du réseau Docker. Ne jamais y mettre « localhost » : dans un
+# conteneur, localhost désigne le conteneur lui-même, pas la base.
+# Démarrage : docker compose -f docker-compose.prod.yml up -d --build
+name: fmhm
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Définir POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Définir POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-fmhm}
+    volumes:
+      - fmhm_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-fmhm}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # Pas de port publié : la base reste sur le réseau Docker interne.
+
+  migrate:
+    build:
+      context: .
+      target: migrator
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-fmhm}?schema=public}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: 'no'
+
+  app:
+    build:
+      context: .
+      target: runner
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-fmhm}?schema=public}
+      AUTH_SECRET: ${AUTH_SECRET:?Définir AUTH_SECRET}
+      ADMIN_SETUP_TOKEN: ${ADMIN_SETUP_TOKEN:-}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?Définir NEXT_PUBLIC_SITE_URL}
+      NODE_ENV: production
+      TRUST_PROXY: ${TRUST_PROXY:-1}
+      PUBLIC_INDEXING: ${PUBLIC_INDEXING:-0}
+      STORAGE_DIR: /data/storage
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-10}
+    volumes:
+      - fmhm_storage:/data/storage
+    ports:
+      - '127.0.0.1:3000:3000'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+
+volumes:
+  fmhm_pgdata:
+  fmhm_storage:
